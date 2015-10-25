@@ -1,10 +1,14 @@
+import os
+
 DELIMITTER = ","
 DATA_FILES_CSV = "./input-data/"
 DATA_FILES_JSON = "./json-data/"
 BATCH_SIZE = 1000
 INDEX_NAME = "write-ads"
 INDEX_TYPE = "ad"
-HEADER = '{ "index": { "_index": "'+INDEX_NAME+'", "_type": "'+INDEX_TYPE+'" } }'
+#HEADER = '{ "index": { "_index": "'+INDEX_NAME+'", "_type": "'+INDEX_TYPE+'" } }'
+HEADER = "channelId,channelName,adId,adUrl,adType,adSize,dateCreated,websiteId,website,category,subCategory"
+FIELDS = HEADER.rstrip('\n').split(DELIMITTER)
 
 def trimQuotes(str):
     str = str.rstrip('\n')
@@ -13,27 +17,32 @@ def trimQuotes(str):
     return str
 
 def getjsonrow(line):
-    global fields
+    global FIELDS
     data = line.split(DELIMITTER)
     str = ''
-    for i in range(len(fields)):
+    for i in range(len(FIELDS)):
         if i>0:
             str += ', '
-        str += '"' + trimQuotes(fields[i]) + '" : "' + trimQuotes(data[i]) + '"'
+        str += '"' + trimQuotes(FIELDS[i]) + '" : "' + trimQuotes(data[i]) + '"'
     return '{' + str + '}'
 
-def flush(filenum, datastr):
+def flush(filenum, datastr, dateYMD='UNSPECIFIED'):
         datastr = '[' + datastr
         datastr = datastr[:-1] + ']'
-        datajson = open(DATA_FILES_JSON+'data.'+str(filenum)+'.json', 'w') #Filename to be time specific
+        filename = DATA_FILES_JSON + '/' + dateYMD + '/' + 'data.' +str(filenum) + '.json'
+        if not os.path.exists(os.path.dirname(filename)):
+            os.makedirs(os.path.dirname(filename))
+        datajson = open(filename, 'w') #Filename to be time specific
         datajson.write(datastr)
         datajson.close()
     
 def prepareData():
+    print "called"
     file = open(DATA_FILES_CSV + "Ad_Export.csv", 'r')
     header = next(file)
-    global fields 
-    fields = header.rstrip('\n').split(DELIMITTER)
+    print header
+    global FIELDS
+    FIELDS = header.rstrip('\n').split(DELIMITTER)
     datastr = ''
     lines=0
     for line in file:
